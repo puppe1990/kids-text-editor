@@ -2,7 +2,8 @@
 
 A fun, colorful, and child-friendly web-based text editor built with Next.js and Tailwind CSS.
 
-![Kids Text Editor Screenshot](/placeholder.svg?height=400&width=800)
+
+<img width="1702" alt="Screenshot 2025-03-08 at 18 51 30" src="https://github.com/user-attachments/assets/26c99078-19f4-4e31-a763-086cad6983e7" />
 
 ## 🌈 Features
 
