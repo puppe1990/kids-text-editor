@@ -1,12 +1,8 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { Paintbrush, Plus, Check } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useState, useEffect } from "react"
+import { Paintbrush, Plus, X } from "lucide-react"
+import { AdvancedColorPicker } from "./advanced-color-picker"
 
 interface ColorPickerProps {
   value: string
@@ -15,8 +11,13 @@ interface ColorPickerProps {
 }
 
 export function ColorPicker({ value, onChange, disabled = false }: ColorPickerProps) {
-  const [customColor, setCustomColor] = useState("#000000")
-  const [isValidHex, setIsValidHex] = useState(true)
+  const [showColorPicker, setShowColorPicker] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  // Set mounted to true once component mounts
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const colors = [
     { value: "#FF5733", label: "Red" },
@@ -28,91 +29,79 @@ export function ColorPicker({ value, onChange, disabled = false }: ColorPickerPr
     { value: "#000000", label: "Black" },
   ]
 
-  const validateHex = (hex: string) => {
-    // Basic hex validation with regex
-    return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hex)
+  const toggleColorPicker = () => {
+    setShowColorPicker(!showColorPicker)
   }
 
-  const handleCustomColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newColor = e.target.value
-    setCustomColor(newColor)
-
-    // Add # if it's missing
-    const colorWithHash = newColor.startsWith("#") ? newColor : `#${newColor}`
-
-    // Validate the hex color
-    const isValid = validateHex(colorWithHash)
-    setIsValidHex(isValid)
-  }
-
-  const applyCustomColor = () => {
-    if (isValidHex && !disabled) {
-      // Ensure the color has a # prefix
-      const colorWithHash = customColor.startsWith("#") ? customColor : `#${customColor}`
-      onChange(colorWithHash)
-    }
+  // If not mounted yet (during SSR), render a simplified version
+  if (!mounted) {
+    return (
+      <div className={`flex items-center gap-3 ${disabled ? "opacity-50" : ""}`}>
+        <Paintbrush className="h-6 w-6 text-red-600" />
+        <div className="flex flex-wrap gap-2">
+          {colors.map((color) => (
+            <div key={color.value} className="w-10 h-10 rounded-full" style={{ backgroundColor: color.value }} />
+          ))}
+          <div className="w-10 h-10 rounded-full bg-white border-2 border-dashed border-gray-300 flex items-center justify-center">
+            <Plus className="h-5 w-5 text-gray-500" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className={`flex items-center gap-3 ${disabled ? "opacity-50" : ""}`}>
-      <Paintbrush className="h-6 w-6 text-red-600" />
-      <div className="flex flex-wrap gap-2">
-        {colors.map((color) => (
-          <button
-            key={color.value}
-            onClick={() => !disabled && onChange(color.value)}
-            className={`w-10 h-10 rounded-full transition-transform ${
-              value === color.value ? "scale-110 ring-4 ring-gray-300" : ""
-            }`}
-            style={{ backgroundColor: color.value }}
-            aria-label={`Set text color to ${color.label}`}
-            title={color.label}
-            disabled={disabled}
-          />
-        ))}
-
-        <Popover>
-          <PopoverTrigger asChild>
+    <div className={`flex flex-col gap-3 ${disabled ? "opacity-50" : ""}`}>
+      <div className="flex items-center gap-3">
+        <Paintbrush className="h-6 w-6 text-red-600" />
+        <div className="flex flex-wrap gap-2">
+          {colors.map((color) => (
             <button
-              className={`w-10 h-10 rounded-full bg-white border-2 border-dashed border-gray-300 flex items-center justify-center transition-transform hover:scale-110 ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+              key={color.value}
+              onClick={() => !disabled && onChange(color.value)}
+              className={`w-10 h-10 rounded-full transition-transform ${
+                value === color.value ? "scale-110 ring-4 ring-gray-300" : ""
+              }`}
+              style={{ backgroundColor: color.value }}
+              aria-label={`Set text color to ${color.label}`}
+              title={color.label}
               disabled={disabled}
-              aria-label="Choose custom color"
-              title="Custom Color"
-            >
-              <Plus className="h-5 w-5 text-gray-500" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80">
-            <div className="space-y-4">
-              <h3 className="font-bold text-lg">Custom Color</h3>
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-10 h-10 rounded-full border border-gray-200"
-                  style={{ backgroundColor: isValidHex ? customColor : "#cccccc" }}
-                />
-                <div className="flex-1">
-                  <Input
-                    value={customColor}
-                    onChange={handleCustomColorChange}
-                    placeholder="#FF5733"
-                    className={`font-mono ${!isValidHex ? "border-red-500" : ""}`}
-                    disabled={disabled}
-                  />
-                  {!isValidHex && (
-                    <p className="text-xs text-red-500 mt-1">Please enter a valid hex color (e.g., #FF5733)</p>
-                  )}
-                </div>
-                <Button size="sm" onClick={applyCustomColor} disabled={!isValidHex || disabled} className="px-2">
-                  <Check className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Tip: You can enter any color code like #FF5733 or FF5733
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+              type="button"
+            />
+          ))}
+
+          <button
+            type="button"
+            onClick={toggleColorPicker}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-110 ${
+              showColorPicker ? "ring-4 ring-blue-300 scale-110" : ""
+            } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+            style={{ backgroundColor: value }}
+            disabled={disabled}
+            aria-label="More colors"
+            title="More Colors"
+          >
+            <Plus className="h-5 w-5 text-white drop-shadow-[0_0_1px_rgba(0,0,0,0.5)]" />
+          </button>
+        </div>
       </div>
+
+      {showColorPicker && (
+        <div className="mt-2 p-4 bg-white border rounded-lg shadow-md">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-bold text-lg">Color Picker</h3>
+            <button
+              type="button"
+              onClick={() => setShowColorPicker(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <AdvancedColorPicker value={value} onChange={onChange} />
+        </div>
+      )}
     </div>
   )
 }
